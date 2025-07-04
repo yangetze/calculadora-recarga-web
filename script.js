@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 mejorCombinacion = combinacionActual;
             } else if (diferencia === menorDiferencia) {
                 // Si las diferencias son iguales, preferimos la que esté por encima (si es posible)
-                // o la que sea más grande si ambas están por debajo (para maximizar la recarga)
+                // o la que sea más grande si ambas están por debajo
                 if (sumaActual >= rentaActual && mejorSuma < rentaActual) { // Preferimos ir por encima si el actual lo hace y el mejor no
                      menorDiferencia = diferencia;
                      mejorSuma = sumaActual;
@@ -110,11 +110,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             resultadosDiv.innerHTML += `<p class="info">Suma Total Recargada: <strong>${resultado.suma.toFixed(2)} Bs.</strong></p>`;
             
+            // --- INICIO DE LA MODIFICACIÓN DE LA DIFERENCIA ---
+            // Aseguramos que la diferencia se muestre siempre como un número positivo
+            // e indicamos si es un sobrante (recarga > renta) o un faltante (recarga < renta).
             if (resultado.suma >= rentaActual) {
+                // Si la suma es mayor o igual a la renta, es un sobrante.
                 resultadosDiv.innerHTML += `<p class="success">Diferencia (sobrante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong></p>`;
             } else {
-                resultadosDiv.innerHTML += `<p class="warning">Diferencia (faltante): <strong>-${resultado.diferencia.toFixed(2)} Bs.</strong></p>`;
+                // Si la suma es menor que la renta, es un faltante.
+                resultadosDiv.innerHTML += `<p class="warning">Diferencia (faltante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong></p>`;
             }
+            // --- FIN DE LA MODIFICACIÓN DE LA DIFERENCIA ---
 
             if (resultado.suma < rentaActual) {
                 resultadosDiv.innerHTML += `<p class="warning">**Nota:** La suma es menor que tu renta. Considera ajustar los montos disponibles o el monto de la renta para una mejor aproximación.</p>`;
