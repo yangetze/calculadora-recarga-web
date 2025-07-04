@@ -14,12 +14,16 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
-        // Ordenamos los montos de mayor a menor para una mejor aproximación inicial
+        // Ordenamos los montos de mayor a menor para ayudar en la selección greedy y el post-procesamiento
         montosRecarga.sort((a, b) => b - a);
 
         let mejorCombinacion = [];
         let mejorSuma = 0;
-        let menorDiferencia = Number.MAX_VALUE; // Inicializamos con una diferencia muy grande
+        // La "mejor" diferencia aquí es el valor absoluto, pero el criterio de selección es más complejo
+        let menorDiferenciaAbsoluta = Number.MAX_VALUE; 
+
+        // Variable para rastrear si ya encontramos una combinación que cubra la renta
+        let mejorSumaCubreRenta = false; // true si mejorSuma >= rentaActual
 
         // Iteramos a través de todas las posibles combinaciones de recargas (subconjuntos)
         const numMontos = montosRecarga.length;
@@ -34,70 +38,99 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let diferenciaActualAbs = Math.abs(rentaActual - sumaActual);
+            let actualCubreRenta = (sumaActual >= rentaActual);
 
-            // Criterios de selección para la "mejor" combinación:
-            // 1. Si la diferencia absoluta actual es menor que la mejor encontrada hasta ahora.
-            // 2. Si las diferencias absolutas son iguales:
-            //    a. Preferimos una suma que sea igual o mayor que la renta (cubriéndola).
-            //    b. Si ambas suman menos que la renta, preferimos la más grande (más cercana por debajo).
-            //    c. Si ambas suman más que la renta, preferimos la más pequeña (más cercana por encima).
-            if (diferenciaActualAbs < menorDiferencia) {
-                menorDiferencia = diferenciaActualAbs;
+            // --- Lógica de Selección Mejorada ---
+            // Si es la primera combinación encontrada
+            if (mejorCombinacion.length === 0) {
                 mejorSuma = sumaActual;
                 mejorCombinacion = combinacionActual;
-            } else if (diferenciaActualAbs === menorDiferencia) {
-                // Caso de empate en la diferencia absoluta
-                if (sumaActual >= rentaActual && mejorSuma < rentaActual) {
-                    // Si la suma actual cubre la renta y la mejor anterior no, la actual es preferible
-                    menorDiferencia = diferenciaActualAbs;
+                menorDiferenciaAbsoluta = diferenciaActualAbs;
+                mejorSumaCubreRenta = actualCubreRenta;
+                continue; // Pasa a la siguiente iteración
+            }
+
+            // Caso 1: La suma actual cubre la renta
+            if (actualCubreRenta) {
+                if (mejorSumaCubreRenta) {
+                    // Ambos cubren la renta: preferimos el que tenga menor sobrante
+                    if (sumaActual < mejorSuma) { // Si la suma actual es menor (más cercana)
+                        menorDiferenciaAbsoluta = diferenciaActualAbs;
+                        mejorSuma = sumaActual;
+                        mejorCombinacion = combinacionActual;
+                    }
+                } else {
+                    // La suma actual cubre la renta, pero la mejor anterior NO: ¡Esta es preferible!
+                    menorDiferenciaAbsoluta = diferenciaActualAbs;
                     mejorSuma = sumaActual;
                     mejorCombinacion = combinacionActual;
-                } else if (sumaActual < rentaActual && mejorSuma < rentaActual && sumaActual > mejorSuma) {
-                    // Si ambas son menores que la renta, preferimos la más grande (más cerca por debajo)
-                    menorDiferencia = diferenciaActualAbs;
-                    mejorSuma = sumaActual;
-                    mejorCombinacion = combinacionActual;
-                } else if (sumaActual >= rentaActual && mejorSuma >= rentaActual && sumaActual < mejorSuma) {
-                    // Si ambas son mayores que la renta, preferimos la más pequeña (más cerca por encima)
-                    menorDiferencia = diferenciaActualAbs;
-                    mejorSuma = sumaActual;
-                    mejorCombinacion = combinacionActual;
+                    mejorSumaCubreRenta = true; // Actualiza el estado
+                }
+            } else {
+                // Caso 2: La suma actual NO cubre la renta
+                if (mejorSumaCubreRenta) {
+                    // La mejor anterior SÍ cubre la renta: La actual (que no cubre) NO es mejor
+                    // No hacemos nada, mantenemos la mejorSuma que cubre
+                } else {
+                    // Ambas NO cubren la renta: preferimos la que esté más cerca (más grande)
+                    if (sumaActual > mejorSuma) { // Mayor suma significa menor "faltante"
+                        menorDiferenciaAbsoluta = diferenciaActualAbs;
+                        mejorSuma = sumaActual;
+                        mejorCombinacion = combinacionActual;
+                    }
                 }
             }
         }
 
-        // Post-procesamiento adicional: Asegurar que si la renta no se cubrió,
-        // intentamos agregar el monto más grande para cubrirla o acercarse lo más posible
-        // siempre y cuando esto mejore la diferencia final.
-        // Este paso es crucial si la renta es muy alta y no se puede cubrir con una sola combinación simple.
+        // Post-procesamiento final: Si la renta aún no se cubrió (o incluso si se cubrió pero se puede optimizar),
+        // intenta añadir el monto más grande para cubrirla o acercarse lo más posible
+        // Este paso es crucial para asegurar que el faltante sea el mínimo o que se logre cubrir.
+        // Solo aplica si el mejor resultado actual NO cubre la renta O si la diferencia es muy grande.
         if (mejorSuma < rentaActual && montosRecarga.length > 0) {
             let sumaTemporal = mejorSuma;
             let combinacionTemporal = [...mejorCombinacion]; // Copia el array
 
             // Añade el monto más grande repetidamente hasta que la suma cubra o supere la renta
+            // o hasta que la siguiente adición haga la suma demasiado grande (alejarse mucho del objetivo si no se puede cubrir)
+            let previousSumaTemporal = sumaTemporal;
             while (sumaTemporal < rentaActual) {
                 sumaTemporal += montosRecarga[0]; // Agrega el monto más grande disponible
                 combinacionTemporal.push(montosRecarga[0]);
+                
+                // Pequeña optimización para evitar sumar indefinidamente si es imposible cubrir
+                // y ya estamos muy por encima de la mejor diferencia actual.
+                if (Math.abs(rentaActual - sumaTemporal) > Math.abs(rentaActual - previousSumaTemporal) * 2 && previousSumaTemporal < rentaActual) {
+                     break; 
+                }
+                previousSumaTemporal = sumaTemporal;
             }
 
             let diferenciaTemporalAbs = Math.abs(rentaActual - sumaTemporal);
+            let temporalCubreRenta = (sumaTemporal >= rentaActual);
 
-            // Comparamos esta nueva aproximación con la "mejorCombinacion" anterior
-            if (diferenciaTemporalAbs < menorDiferencia ||
-                (diferenciaTemporalAbs === menorDiferencia && sumaTemporal >= rentaActual && mejorSuma < rentaActual) ||
-                (diferenciaTemporalAbs === menorDiferencia && sumaTemporal >= rentaActual && mejorSuma >= rentaActual && sumaTemporal < mejorSuma) ||
-                (diferenciaTemporalAbs === menorDiferencia && sumaTemporal < rentaActual && mejorSuma < rentaActual && sumaTemporal > mejorSuma)
-            ) {
-                menorDiferencia = diferenciaTemporalAbs;
+            // Comparamos esta nueva aproximación con la "mejorCombinacion" final de los subconjuntos
+            if (temporalCubreRenta && !mejorSumaCubreRenta) {
+                // Si la temporal cubre y la mejor no cubría, la temporal es mejor
                 mejorSuma = sumaTemporal;
                 mejorCombinacion = combinacionTemporal;
+                menorDiferenciaAbsoluta = diferenciaTemporalAbs;
+            } else if (temporalCubreRenta && mejorSumaCubreRenta && sumaTemporal < mejorSuma) {
+                // Si ambas cubren, preferimos la que tenga menor sobrante
+                mejorSuma = sumaTemporal;
+                mejorCombinacion = combinacionTemporal;
+                menorDiferenciaAbsoluta = diferenciaTemporalAbs;
+            } else if (!temporalCubreRenta && !mejorSumaCubreRenta && sumaTemporal > mejorSuma) {
+                // Si ninguna cubre, preferimos la que tenga menor faltante (mayor suma)
+                mejorSuma = sumaTemporal;
+                mejorCombinacion = combinacionTemporal;
+                menorDiferenciaAbsoluta = diferenciaTemporalAbs;
             }
         }
 
         return {
             seleccionados: mejorCombinacion,
             suma: mejorSuma,
-            diferencia: menorDiferencia
+            diferencia: menorDiferenciaAbsoluta
         };
     }
 
@@ -120,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             resultadosDiv.appendChild(ul);
 
             resultadosDiv.innerHTML += `<p class="info">Suma Total Recargada: <strong>${resultado.suma.toFixed(2)} Bs.</strong></p>`;
-
+            
             // Mostrar la diferencia como un valor positivo, indicando si es un sobrante o faltante.
             if (resultado.suma >= rentaActual) {
                 resultadosDiv.innerHTML += `<p class="success">Diferencia (sobrante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong></p>`;
@@ -142,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event listener para el botón de cálculo
     calcularBtn.addEventListener('click', () => {
         const rentaActual = parseFloat(rentaActualInput.value);
-
+        
         // Parsear los montos de recarga del string a un array de números
         const montosTexto = montosRecargaInput.value;
         const montosRecarga = montosTexto.split(',')
