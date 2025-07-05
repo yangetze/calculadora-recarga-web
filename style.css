@@ -151,3 +151,36 @@ button:active {
     color: #dc3545;
     border: 1px solid #dc3545;
 }
+
+.fixed-montos {
+    margin-bottom: 20px;
+    text-align: left;
+    background-color: #f8f8f8; /* Un fondo suave para diferenciar */
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.fixed-montos label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #444;
+    font-size: 0.95em;
+}
+
+#montosFijosDisplay {
+    display: flex; /* Para que los montos se muestren en línea */
+    flex-wrap: wrap; /* Permite que los montos se ajusten a la siguiente línea */
+    gap: 8px; /* Espacio entre los "tags" de montos */
+}
+
+.monto-tag {
+    background-color: #e0f7fa; /* Color de fondo para cada monto */
+    color: #007bff; /* Color del texto */
+    padding: 6px 10px;
+    border-radius: 20px; /* Bordes redondeados para parecer tags */
+    font-size: 0.9em;
+    font-weight: bold;
+    border: 1px solid #b3e5fc; /* Borde sutil */
+}
