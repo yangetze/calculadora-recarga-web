@@ -9,18 +9,18 @@
 <body>
     <div class="container">
         <h1>📱 Calculadora de Recarga Telefónica</h1>
-        <p>Ingresa tu renta actual y los montos de recarga disponibles para encontrar la combinación óptima.</p>
+        <p>Ingresa tu renta actual para encontrar la combinación óptima de recarga.</p>
 
         <div class="input-group">
             <label for="rentaActual">1. Renta actual (Bs.):</label>
             <input type="number" id="rentaActual" value="1119.83" step="0.01" min="0">
         </div>
 
-        <div class="input-group">
-            <label for="montosRecarga">2. Montos de recarga disponibles (separados por comas):</label>
-            <input type="text" id="montosRecarga" value="90, 200, 300, 450, 650, 1000, 1500, 2700" placeholder="Ej: 90, 200, 300">
+        <div class="fixed-montos">
+            <label>2. Montos de recarga disponibles:</label>
+            <div id="montosFijosDisplay">
+                </div>
         </div>
-
         <button id="calcularBtn">✨ Calcular Recarga Óptima</button>
 
         <div id="resultados" class="resultados">
