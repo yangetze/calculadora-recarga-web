@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const montosFijosDisplay = document.getElementById('montosFijosDisplay'); // Nuevo: Referencia al div donde se mostrarán los montos
 
     // --- Montos de Recarga Fijos (¡Puedes modificar este array!) ---
-    const montosRecargaFijos = [90, 200, 300, 450, 650, 1000, 1500, 2700];
+    const montosRecargaFijos = [100, 200, 500, 800, 1500, 1800, 3000, 5000];
 
     // Función para dibujar los montos fijos en la interfaz
     function dibujarMontosFijos() {
