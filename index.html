@@ -12,15 +12,23 @@
         <p>Ingresa tu renta actual para encontrar la combinación óptima de recarga.</p>
 
         <div class="input-group">
-            <label for="rentaActual">1. Renta actual (Bs.):</label>
+            <label for="companiaTelefonica">1. Selecciona tu compañía telefónica:</label>
+            <select id="companiaTelefonica">
+                <option value="movistar">Movistar</option>
+                <option value="digitel">Digitel</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label for="rentaActual">2. Renta actual (Bs.):</label>
             <input type="number" id="rentaActual" value="1119.83" step="0.01" min="0">
         </div>
 
         <div class="fixed-montos">
-            <label>2. Montos de recarga disponibles:</label>
+            <label>3. Montos de recarga disponibles:</label>
             <div id="montosFijosDisplay">
                 </div>
         </div>
+
         <button id="calcularBtn">✨ Calcular Recarga Óptima</button>
 
         <div id="resultados" class="resultados">
