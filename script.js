@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Montos de Recarga Fijos (¡Ahora es un objeto!) ---
     const montosRecargaPorCompania = {
         movistar: [100,200,500,800,1500,1800,3000,5000],
-        digitel: [120,240,360,720,1200,1440,2800,3800] 
+        digitel: [160,320,960,1280,1440,1440,2400,3800,4800,5440] 
     };
 
     let montosRecargaActual = montosRecargaPorCompania.movistar; // Montos de recarga predeterminados
