@@ -45,98 +45,82 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
-        montosRecarga.sort((a, b) => b - a);
+        // --- Algoritmo de Knapsack (Cambio de Monedas) ---
+        // Objetivo: Encontrar la combinación que sume >= rentaActual
+        // Criterio 1: Minimizar (Suma - RentaActual)
+        // Criterio 2: Minimizar el número de elementos (recargas)
 
-        let mejorCombinacion = [];
-        let mejorSuma = 0;
-        let menorDiferenciaAbsoluta = Number.MAX_VALUE;
-        let mejorSumaCubreRenta = false;
+        const scale = 100;
+        const target = Math.ceil(rentaActual * scale);
+        const montosInt = montosRecarga.map(m => Math.round(m * scale));
+        const maxMontoInt = Math.max(...montosInt);
 
-        const numMontos = montosRecarga.length;
-        for (let i = 0; i < Math.pow(2, numMontos); i++) {
-            let sumaActual = 0;
-            let combinacionActual = [];
-            for (let j = 0; j < numMontos; j++) {
-                if ((i >> j) & 1) {
-                    sumaActual += montosRecarga[j];
-                    combinacionActual.push(montosRecarga[j]);
-                }
-            }
+        // Limite de búsqueda: Si tenemos una suma >= target + maxMonto,
+        // podríamos haber quitado el monto máximo y estaríamos más cerca del target (o aún válidos).
+        // Por seguridad y simplicidad, buscamos hasta target + maxMonto.
+        const limitInt = target + maxMontoInt;
 
-            let diferenciaActualAbs = Math.abs(rentaActual - sumaActual);
-            let actualCubreRenta = (sumaActual >= rentaActual);
+        // dpCount[s] almacena el número mínimo de monedas para llegar a la suma 's'.
+        // Inicializamos con un valor grande.
+        const INF = 2147483647;
+        const dpCount = new Int32Array(limitInt + 1).fill(INF);
+        // dpLastMonto[s] almacena el último monto agregado para llegar a 's' (para reconstruir).
+        const dpLastMonto = new Int32Array(limitInt + 1).fill(0);
 
-            if (mejorCombinacion.length === 0) {
-                mejorSuma = sumaActual;
-                mejorCombinacion = combinacionActual;
-                menorDiferenciaAbsoluta = diferenciaActualAbs;
-                mejorSumaCubreRenta = actualCubreRenta;
-                continue;
-            }
+        dpCount[0] = 0;
 
-            if (actualCubreRenta) {
-                if (mejorSumaCubreRenta) {
-                    if (sumaActual < mejorSuma) {
-                        menorDiferenciaAbsoluta = diferenciaActualAbs;
-                        mejorSuma = sumaActual;
-                        mejorCombinacion = combinacionActual;
-                    }
-                } else {
-                    menorDiferenciaAbsoluta = diferenciaActualAbs;
-                    mejorSuma = sumaActual;
-                    mejorCombinacion = combinacionActual;
-                    mejorSumaCubreRenta = true;
-                }
-            } else {
-                if (mejorSumaCubreRenta) {
-                    // No hacemos nada
-                } else {
-                    if (sumaActual > mejorSuma) {
-                        menorDiferenciaAbsoluta = diferenciaActualAbs;
-                        mejorSuma = sumaActual;
-                        mejorCombinacion = combinacionActual;
+        // Llenamos la tabla DP
+        for (let monto of montosInt) {
+            for (let s = monto; s <= limitInt; s++) {
+                if (dpCount[s - monto] !== INF) {
+                    if (dpCount[s - monto] + 1 < dpCount[s]) {
+                        dpCount[s] = dpCount[s - monto] + 1;
+                        dpLastMonto[s] = monto;
                     }
                 }
             }
         }
 
-        if (mejorSuma < rentaActual && montosRecarga.length > 0) {
-            let sumaTemporal = mejorSuma;
-            let combinacionTemporal = [...mejorCombinacion];
+        // Buscamos la mejor suma >= target
+        let bestSum = -1;
 
-            let previousSumaTemporal = sumaTemporal;
-            while (sumaTemporal < rentaActual) {
-                sumaTemporal += montosRecarga[0];
-                combinacionTemporal.push(montosRecarga[0]);
-                
-                if (Math.abs(rentaActual - sumaTemporal) > Math.abs(rentaActual - previousSumaTemporal) * 2 && previousSumaTemporal < rentaActual) {
-                     break; 
-                }
-                previousSumaTemporal = sumaTemporal;
-            }
-
-            let diferenciaTemporalAbs = Math.abs(rentaActual - sumaTemporal);
-            let temporalCubreRenta = (sumaTemporal >= rentaActual);
-
-            if (temporalCubreRenta && !mejorSumaCubreRenta) {
-                mejorSuma = sumaTemporal;
-                mejorCombinacion = combinacionTemporal;
-                menorDiferenciaAbsoluta = diferenciaTemporalAbs;
-            } else if (temporalCubreRenta && mejorSumaCubreRenta && sumaTemporal < mejorSuma) {
-                mejorSuma = sumaTemporal;
-                mejorCombinacion = combinacionTemporal;
-                menorDiferenciaAbsoluta = diferenciaTemporalAbs;
-            } else if (!temporalCubreRenta && !mejorSumaCubreRenta && sumaTemporal > mejorSuma) {
-                mejorSuma = sumaTemporal;
-                mejorCombinacion = combinacionTemporal;
-                menorDiferenciaAbsoluta = diferenciaTemporalAbs;
+        for (let s = target; s <= limitInt; s++) {
+            if (dpCount[s] !== INF) {
+                bestSum = s;
+                // Como iteramos desde target hacia arriba, el primer 's' válido
+                // es el que minimiza la diferencia (Suma - Renta).
+                // Al usar DP para min monedas, garantizamos min recargas para esa suma.
+                break;
             }
         }
+
+        if (bestSum === -1) {
+             // Caso extremo: no se encontró solución (raro si hay montos)
+             // Esto podría pasar si el target es muy grande y limitamos el array
+             // pero aquí el array es dinámico basado en target.
+             return {
+                seleccionados: [],
+                suma: 0,
+                diferencia: rentaActual
+             };
+        }
+
+        // Reconstruimos la solución
+        const resultMontos = [];
+        let curr = bestSum;
+        while (curr > 0) {
+            let m = dpLastMonto[curr];
+            resultMontos.push(m / scale);
+            curr -= m;
+        }
+
+        // Ordenamos para mejor presentación (mayor a menor)
+        resultMontos.sort((a, b) => b - a);
 
         return {
-            seleccionados: mejorCombinacion,
-            suma: mejorSuma,
-            diferencia: menorDiferenciaAbsoluta
+            seleccionados: resultMontos,
+            suma: bestSum / scale,
+            diferencia: Math.abs((bestSum / scale) - rentaActual)
         };
     }
 
@@ -166,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (resultado.suma < rentaActual) {
                 resultadosDiv.innerHTML += `<p class="warning">**Nota:** La suma es menor que tu renta. Considera ajustar los montos disponibles o el monto de la renta para una mejor aproximación.</p>`;
             } else {
-                resultadosDiv.innerHTML += `<p class="success">¡Recarga calculada con éxito!</p>`;
+                // Mensaje de éxito eliminado según requerimiento
             }
         } else {
             resultadosDiv.innerHTML += `<p class="error">No se encontró una combinación de recargas que se ajuste a tu renta con los montos proporcionados.</p>`;
