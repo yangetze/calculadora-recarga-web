@@ -1,86 +1,95 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f7f6;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f7f7f9;
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Alinea al inicio para que no se pegue al centro vertical */
-    min-height: 100vh; /* Ocupa al menos el alto de la ventana */
+    align-items: flex-start;
+    min-height: 100vh;
     margin: 0;
-    padding: 20px; /* Espacio alrededor del contenedor en pantallas pequeñas */
-    box-sizing: border-box; /* Incluye padding en el tamaño total */
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .container {
     background-color: #ffffff;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 35px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(98, 0, 234, 0.08);
     max-width: 500px;
     width: 100%;
     text-align: center;
     box-sizing: border-box;
-    margin-top: 30px; /* Margen superior para que no esté pegado arriba */
+    margin-top: 30px;
 }
 
 h1 {
-    color: #333;
-    margin-bottom: 15px;
+    color: #2c2c2c;
+    margin-bottom: 10px;
     font-size: 1.8em;
+    font-weight: 700;
 }
 
 p {
-    color: #555;
+    color: #666;
     margin-bottom: 25px;
     line-height: 1.5;
 }
 
 .input-group {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
     text-align: left;
 }
 
 .input-group label {
     display: block;
     margin-bottom: 8px;
-    font-weight: bold;
-    color: #444;
-    font-size: 0.95em;
+    font-weight: 600;
+    color: #4a4a4a;
+    font-size: 0.9em;
 }
 
 .input-group input[type="number"],
-.input-group input[type="text"] {
+.input-group input[type="text"],
+.input-group select {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    padding: 14px 16px;
+    border: 2px solid #eef0f2;
+    border-radius: 12px;
     font-size: 1em;
-    box-sizing: border-box; /* Para que el padding no afecte el ancho total */
+    box-sizing: border-box;
     outline: none;
-    transition: border-color 0.3s;
+    transition: all 0.3s ease;
+    background-color: #fafafa;
+    color: #333;
 }
 
 .input-group input[type="number"]:focus,
-.input-group input[type="text"]:focus {
-    border-color: #007bff;
+.input-group input[type="text"]:focus,
+.input-group select:focus {
+    border-color: #6200ea;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(98, 0, 234, 0.1);
 }
 
 button {
-    background-color: #007bff;
+    background-color: #6200ea;
     color: white;
-    padding: 14px 25px;
+    padding: 16px 24px;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 1.1em;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.1s ease;
+    transition: all 0.3s ease;
     width: 100%;
-    max-width: 300px; /* Limita el ancho del botón */
-    margin-top: 10px; /* Espacio arriba del botón */
+    margin-top: 10px;
+    box-shadow: 0 4px 12px rgba(98, 0, 234, 0.2);
 }
 
 button:hover {
-    background-color: #0056b3;
-    transform: translateY(-1px);
+    background-color: #4b00b3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(98, 0, 234, 0.3);
 }
 
 button:active {
@@ -111,76 +120,170 @@ button:active {
 }
 
 .resultados ul li {
-    background-color: #e9f7ef; /* Un color suave para los elementos de la lista */
-    border-left: 4px solid #28a745; /* Barra verde para indicar éxito */
-    padding: 8px 12px;
-    margin-bottom: 5px;
-    border-radius: 4px;
-    font-weight: bold;
-    color: #28a745;
+    background-color: #f3e5f5;
+    border-left: 4px solid #9c27b0;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #6a1b9a;
 }
 
 .resultados .info, .resultados .success, .resultados .warning, .resultados .error {
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    font-weight: bold;
-    line-height: 1.4;
+    padding: 14px 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.5;
 }
 
 .resultados .info {
-    background-color: #e0f7fa;
-    color: #007bff;
-    border: 1px solid #007bff;
+    background-color: #f3e5f5;
+    color: #6a1b9a;
+    border: 1px solid #e1bee7;
 }
 
 .resultados .success {
-    background-color: #d4edda;
-    color: #28a745;
-    border: 1px solid #28a745;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
 }
 
 .resultados .warning {
-    background-color: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffc107;
+    background-color: #fff8e1;
+    color: #f57f17;
+    border: 1px solid #ffecb3;
 }
 
 .resultados .error {
-    background-color: #f8d7da;
-    color: #dc3545;
-    border: 1px solid #dc3545;
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
 }
 
 .fixed-montos {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
     text-align: left;
-    background-color: #f8f8f8; /* Un fondo suave para diferenciar */
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #eee;
+    background-color: #fafafa;
+    padding: 18px;
+    border-radius: 16px;
+    border: 1px solid #eef0f2;
 }
 
 .fixed-montos label {
     display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-    color: #444;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #4a4a4a;
     font-size: 0.95em;
 }
 
 #montosFijosDisplay {
-    display: flex; /* Para que los montos se muestren en línea */
-    flex-wrap: wrap; /* Permite que los montos se ajusten a la siguiente línea */
-    gap: 8px; /* Espacio entre los "tags" de montos */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .monto-tag {
-    background-color: #e0f7fa; /* Color de fondo para cada monto */
-    color: #007bff; /* Color del texto */
-    padding: 6px 10px;
-    border-radius: 20px; /* Bordes redondeados para parecer tags */
-    font-size: 0.9em;
-    font-weight: bold;
-    border: 1px solid #b3e5fc; /* Borde sutil */
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    border: 1px solid #e1bee7;
+}
+
+/* Estilos para el Tracker de Recargas */
+.recharge-tracker {
+    margin-top: 24px;
+    padding: 20px;
+    background-color: #ffffff;
+    border: 1px solid #eef0f2;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.recharge-tracker h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #2c2c2c;
+    font-size: 1.2em;
+}
+
+.recharge-tracker .remaining-amount {
+    font-size: 1.1em;
+    margin-bottom: 16px;
+    color: #4a4a4a;
+}
+
+.recharge-tracker .remaining-amount strong {
+    color: #6200ea;
+    font-size: 1.2em;
+}
+
+.checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.checklist li {
+    display: flex;
+    align-items: center;
+    background-color: #fafafa;
+    border: 1px solid #eef0f2;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+}
+
+.checklist li.checked {
+    background-color: #f3e5f5;
+    border-color: #e1bee7;
+    opacity: 0.8;
+}
+
+.checklist li.checked label {
+    text-decoration: line-through;
+    color: #888;
+}
+
+.checklist input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #b0bec5;
+    border-radius: 6px;
+    margin-right: 12px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.checklist input[type="checkbox"]:checked {
+    background-color: #6200ea;
+    border-color: #6200ea;
+}
+
+.checklist input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checklist label {
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    flex-grow: 1;
 }

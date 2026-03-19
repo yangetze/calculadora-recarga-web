@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Montos de Recarga Fijos (¡Ahora es un objeto!) ---
     const montosRecargaPorCompania = {
-        movistar: [150, 200, 900, 1600, 3000, 4000, 6000, 10000],
-        digitel: [160, 320, 960, 1280, 1440, 2400, 3800, 4800, 5440]
+        movistar: [150, 200, 1000, 2000, 3000, 5000, 8000, 10000],
+        digitel: [300, 600, 900, 1800, 3000, 5400, 7500, 9000, 11000]
     };
 
     let montosRecargaActual = montosRecargaPorCompania.movistar; // Montos de recarga predeterminados
@@ -130,16 +130,89 @@ document.addEventListener('DOMContentLoaded', () => {
         resultadosDiv.innerHTML += `<p class="info">Tu renta actual es: <strong>${rentaActual.toFixed(2)} Bs.</strong></p>`;
         
         if (resultado.seleccionados.length > 0) {
-            resultadosDiv.innerHTML += `<p class="success">La forma **más óptima** de recargar es seleccionando:</p>`;
-            const ul = document.createElement('ul');
+            resultadosDiv.innerHTML += `<p class="success">La forma más óptima de recargar es seleccionando:</p>`;
+
+            // Agrupar los montos
+            const conteoMontos = {};
             resultado.seleccionados.forEach(monto => {
+                if (conteoMontos[monto]) {
+                    conteoMontos[monto]++;
+                } else {
+                    conteoMontos[monto] = 1;
+                }
+            });
+
+            const ul = document.createElement('ul');
+            // Ordenar los montos de mayor a menor para la vista agrupada
+            const montosUnicos = Object.keys(conteoMontos).map(Number).sort((a, b) => b - a);
+
+            montosUnicos.forEach(monto => {
+                const cantidad = conteoMontos[monto];
+                const totalMonto = monto * cantidad;
                 const li = document.createElement('li');
-                li.textContent = `${monto.toFixed(2)} Bs.`;
+                li.textContent = `${monto.toFixed(2)} Bs. x ${cantidad} = ${totalMonto.toFixed(2)} Bs.`;
                 ul.appendChild(li);
             });
             resultadosDiv.appendChild(ul);
 
             resultadosDiv.innerHTML += `<p class="info">Suma Total Recargada: <strong>${resultado.suma.toFixed(2)} Bs.</strong></p>`;
+
+            // Lógica de los checkboxes
+            const trackerDiv = document.createElement('div');
+            trackerDiv.classList.add('recharge-tracker');
+
+            trackerDiv.innerHTML += `<h3>Progreso de Recarga</h3>`;
+
+            const remainingP = document.createElement('p');
+            remainingP.classList.add('remaining-amount');
+            remainingP.innerHTML = `Falta por recargar: <strong>${resultado.suma.toFixed(2)} Bs.</strong>`;
+            trackerDiv.appendChild(remainingP);
+
+            const checklistUl = document.createElement('ul');
+            checklistUl.classList.add('checklist');
+
+            let currentRemaining = resultado.suma;
+
+            resultado.seleccionados.forEach((monto, index) => {
+                const li = document.createElement('li');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `recharge-check-${index}`;
+                checkbox.value = monto;
+
+                const label = document.createElement('label');
+                label.htmlFor = `recharge-check-${index}`;
+                label.textContent = `${monto.toFixed(2)} Bs.`;
+
+                // Add event listener to update remaining amount
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        currentRemaining -= monto;
+                    } else {
+                        currentRemaining += monto;
+                    }
+
+                    // Prevent floating point errors
+                    if (currentRemaining < 0.01) currentRemaining = 0;
+
+                    remainingP.innerHTML = `Falta por recargar: <strong>${currentRemaining.toFixed(2)} Bs.</strong>`;
+
+                    if (e.target.checked) {
+                        li.classList.add('checked');
+                    } else {
+                        li.classList.remove('checked');
+                    }
+                });
+
+                li.appendChild(checkbox);
+                li.appendChild(label);
+                checklistUl.appendChild(li);
+            });
+
+            trackerDiv.appendChild(checklistUl);
+            resultadosDiv.appendChild(trackerDiv);
+
             
             if (resultado.suma >= rentaActual) {
                 resultadosDiv.innerHTML += `<p class="success">Diferencia (sobrante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong></p>`;
@@ -148,9 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (resultado.suma < rentaActual) {
-                resultadosDiv.innerHTML += `<p class="warning">**Nota:** La suma es menor que tu renta. Considera ajustar los montos disponibles o el monto de la renta para una mejor aproximación.</p>`;
-            } else {
-                // Mensaje de éxito eliminado según requerimiento
+                resultadosDiv.innerHTML += `<p class="warning">Nota: La suma es menor que tu renta. Considera ajustar los montos disponibles o el monto de la renta para una mejor aproximación.</p>`;
             }
         } else {
             resultadosDiv.innerHTML += `<p class="error">No se encontró una combinación de recargas que se ajuste a tu renta con los montos proporcionados.</p>`;
