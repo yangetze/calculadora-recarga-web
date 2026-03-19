@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const companiaTelefonicaSelect = document.getElementById('companiaTelefonica'); // Nuevo: Referencia a la lista desplegable
+    const logoCompania = document.getElementById('logoCompania');
     const rentaActualInput = document.getElementById('rentaActual');
     const calcularBtn = document.getElementById('calcularBtn');
     const resultadosDiv = document.getElementById('resultados');
@@ -31,6 +32,16 @@ document.addEventListener('DOMContentLoaded', () => {
     companiaTelefonicaSelect.addEventListener('change', (event) => {
         const companiaSeleccionada = event.target.value;
         montosRecargaActual = montosRecargaPorCompania[companiaSeleccionada];
+
+        // Actualizar logo
+        if (companiaSeleccionada === 'movistar') {
+            logoCompania.src = 'movistar-logo.svg';
+            logoCompania.alt = 'Logo Movistar';
+        } else if (companiaSeleccionada === 'digitel') {
+            logoCompania.src = 'digitel-logo.svg';
+            logoCompania.alt = 'Logo Digitel';
+        }
+
         dibujarMontos(montosRecargaActual); // Dibuja los nuevos montos
         resultadosDiv.innerHTML = ''; // Opcional: Limpiar resultados anteriores para evitar confusiones
     });
@@ -155,7 +166,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             resultadosDiv.appendChild(ul);
 
-            resultadosDiv.innerHTML += `<p class="info">Suma Total Recargada: <strong>${resultado.suma.toFixed(2)} Bs.</strong></p>`;
+            resultadosDiv.innerHTML += `<p class="info">Total a recargar: <strong>${resultado.suma.toFixed(2)} Bs.</strong></p>`;
+
+            if (resultado.suma >= rentaActual) {
+                resultadosDiv.innerHTML += `<p class="success">Diferencia (sobrante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong></p>`;
+            } else {
+                resultadosDiv.innerHTML += `<p class="warning">Diferencia (faltante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong></p>`;
+            }
 
             // Lógica de los checkboxes
             const trackerDiv = document.createElement('div');
@@ -196,7 +213,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Prevent floating point errors
                     if (currentRemaining < 0.01) currentRemaining = 0;
 
-                    remainingP.innerHTML = `Falta por recargar: <strong>${currentRemaining.toFixed(2)} Bs.</strong>`;
+                    if (currentRemaining === 0) {
+                        remainingP.innerHTML = `<strong>¡Recarga completada!</strong>`;
+                    } else {
+                        remainingP.innerHTML = `Falta por recargar: <strong>${currentRemaining.toFixed(2)} Bs.</strong>`;
+                    }
 
                     if (e.target.checked) {
                         li.classList.add('checked');
@@ -213,15 +234,13 @@ document.addEventListener('DOMContentLoaded', () => {
             trackerDiv.appendChild(checklistUl);
             resultadosDiv.appendChild(trackerDiv);
 
-            
-            if (resultado.suma >= rentaActual) {
-                resultadosDiv.innerHTML += `<p class="success">Diferencia (sobrante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong></p>`;
-            } else {
-                resultadosDiv.innerHTML += `<p class="warning">Diferencia (faltante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong></p>`;
-            }
 
             if (resultado.suma < rentaActual) {
-                resultadosDiv.innerHTML += `<p class="warning">Nota: La suma es menor que tu renta. Considera ajustar los montos disponibles o el monto de la renta para una mejor aproximación.</p>`;
+                // To safely append a node without destroying events from innerHTML
+                const warningP = document.createElement('p');
+                warningP.className = 'warning';
+                warningP.textContent = 'Nota: La suma es menor que tu renta. Considera ajustar los montos disponibles o el monto de la renta para una mejor aproximación.';
+                resultadosDiv.appendChild(warningP);
             }
         } else {
             resultadosDiv.innerHTML += `<p class="error">No se encontró una combinación de recargas que se ajuste a tu renta con los montos proporcionados.</p>`;
