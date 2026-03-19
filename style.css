@@ -48,6 +48,23 @@ p {
     font-size: 0.9em;
 }
 
+.compania-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-operadora {
+    height: 40px;
+    width: 40px;
+    object-fit: contain;
+    border-radius: 5px;
+}
+
+.compania-selector select {
+    flex-grow: 1;
+}
+
 .input-group input[type="number"],
 .input-group input[type="text"],
 .input-group select {
