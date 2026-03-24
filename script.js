@@ -92,165 +92,247 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Buscamos la mejor suma >= target
-        let bestSum = -1;
-
+        // Recopilamos todas las sumas válidas >= target
+        const results = [];
         for (let s = target; s <= limitInt; s++) {
             if (dpCount[s] !== INF) {
-                bestSum = s;
-                // Como iteramos desde target hacia arriba, el primer 's' válido
-                // es el que minimiza la diferencia (Suma - Renta).
-                // Al usar DP para min monedas, garantizamos min recargas para esa suma.
-                break;
+                results.push({ sumInt: s, numRecargas: dpCount[s] });
             }
         }
 
-        if (bestSum === -1) {
-             // Caso extremo: no se encontró solución (raro si hay montos)
-             // Esto podría pasar si el target es muy grande y limitamos el array
-             // pero aquí el array es dinámico basado en target.
-             return {
-                seleccionados: [],
-                suma: 0,
-                diferencia: rentaActual
-             };
+        if (results.length === 0) {
+             return [];
         }
 
-        // Reconstruimos la solución
-        const resultMontos = [];
-        let curr = bestSum;
-        while (curr > 0) {
-            let m = dpLastMonto[curr];
-            resultMontos.push(m / scale);
-            curr -= m;
+        // Opción 1: Menor diferencia de dinero (primera en la lista, porque iteramos hacia arriba)
+        const opcion1 = results[0];
+
+        // Opción 2: Menor cantidad de recargas, límite +20%
+        const margenPorcentaje = 0.20;
+        const limiteSumaOpcion2 = opcion1.sumInt * (1 + margenPorcentaje);
+        let opcion2 = null;
+
+        for (let i = 1; i < results.length; i++) {
+            const r = results[i];
+            if (r.sumInt > limiteSumaOpcion2) {
+                break; // Ya nos pasamos del 20%
+            }
+            if (r.numRecargas < opcion1.numRecargas) {
+                opcion2 = r;
+                break; // Tomamos la PRIMERA que reduzca las recargas
+            }
         }
 
-        // Ordenamos para mejor presentación (mayor a menor)
-        resultMontos.sort((a, b) => b - a);
+        const opcionesFinales = [opcion1];
+        if (opcion2) {
+            opcionesFinales.push(opcion2);
+        }
 
-        return {
-            seleccionados: resultMontos,
-            suma: bestSum / scale,
-            diferencia: Math.abs((bestSum / scale) - rentaActual)
-        };
+        // Reconstruir los montos para cada opción
+        return opcionesFinales.map(op => {
+            const resultMontos = [];
+            let curr = op.sumInt;
+            while (curr > 0) {
+                let m = dpLastMonto[curr];
+                resultMontos.push(m / scale);
+                curr -= m;
+            }
+            resultMontos.sort((a, b) => b - a);
+            return {
+                seleccionados: resultMontos,
+                suma: op.sumInt / scale,
+                diferencia: Math.abs((op.sumInt / scale) - rentaActual)
+            };
+        });
     }
 
-    // Función para mostrar los resultados en la interfaz
-    function mostrarResultados(rentaActual, resultado) {
-        resultadosDiv.innerHTML = '';
-        resultadosDiv.innerHTML += `<p class="info">Tu renta actual es: <strong>${rentaActual.toFixed(2)} Bs.</strong></p>`;
-        
-        if (resultado.seleccionados.length > 0) {
-            resultadosDiv.innerHTML += `<p class="success">La forma más óptima de recargar es seleccionando:</p>`;
+    // Función para renderizar el contenido de una opción de recarga
+    function crearContenidoOpcion(rentaActual, resultado, indexOpcion) {
+        const container = document.createElement('div');
+        container.classList.add('opcion-container');
 
-            // Agrupar los montos
-            const conteoMontos = {};
-            resultado.seleccionados.forEach(monto => {
-                if (conteoMontos[monto]) {
-                    conteoMontos[monto]++;
+        const successP = document.createElement('p');
+        successP.classList.add('success');
+        successP.textContent = 'La forma de recargar es seleccionando:';
+        container.appendChild(successP);
+
+        // Agrupar los montos
+        const conteoMontos = {};
+        resultado.seleccionados.forEach(monto => {
+            if (conteoMontos[monto]) {
+                conteoMontos[monto]++;
+            } else {
+                conteoMontos[monto] = 1;
+            }
+        });
+
+        const ul = document.createElement('ul');
+        const montosUnicos = Object.keys(conteoMontos).map(Number).sort((a, b) => b - a);
+
+        montosUnicos.forEach(monto => {
+            const cantidad = conteoMontos[monto];
+            const totalMonto = monto * cantidad;
+            const li = document.createElement('li');
+            li.textContent = `${monto.toFixed(2)} Bs. x ${cantidad} = ${totalMonto.toFixed(2)} Bs.`;
+            ul.appendChild(li);
+        });
+        container.appendChild(ul);
+
+        const totalP = document.createElement('p');
+        totalP.classList.add('info');
+        totalP.innerHTML = `Total a recargar: <strong>${resultado.suma.toFixed(2)} Bs.</strong>`;
+        container.appendChild(totalP);
+
+        const diffP = document.createElement('p');
+        if (resultado.suma >= rentaActual) {
+            diffP.classList.add('success');
+            diffP.innerHTML = `Diferencia (sobrante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong>`;
+        } else {
+            diffP.classList.add('warning');
+            diffP.innerHTML = `Diferencia (faltante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong>`;
+        }
+        container.appendChild(diffP);
+
+        // Lógica de los checkboxes
+        const trackerDiv = document.createElement('div');
+        trackerDiv.classList.add('recharge-tracker');
+
+        const titleH3 = document.createElement('h3');
+        titleH3.textContent = 'Progreso de Recarga';
+        trackerDiv.appendChild(titleH3);
+
+        const remainingP = document.createElement('p');
+        remainingP.classList.add('remaining-amount');
+        remainingP.innerHTML = `Falta por recargar: <strong>${resultado.suma.toFixed(2)} Bs.</strong>`;
+        trackerDiv.appendChild(remainingP);
+
+        const checklistUl = document.createElement('ul');
+        checklistUl.classList.add('checklist');
+
+        let currentRemaining = resultado.suma;
+
+        resultado.seleccionados.forEach((monto, index) => {
+            const li = document.createElement('li');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `recharge-check-op${indexOpcion}-${index}`;
+            checkbox.value = monto;
+
+            const label = document.createElement('label');
+            label.htmlFor = `recharge-check-op${indexOpcion}-${index}`;
+            label.textContent = `${monto.toFixed(2)} Bs.`;
+
+            checkbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    currentRemaining -= monto;
                 } else {
-                    conteoMontos[monto] = 1;
+                    currentRemaining += monto;
+                }
+
+                if (currentRemaining < 0.01) currentRemaining = 0;
+
+                if (currentRemaining === 0) {
+                    remainingP.innerHTML = `<strong>¡Recarga completada!</strong>`;
+                } else {
+                    remainingP.innerHTML = `Falta por recargar: <strong>${currentRemaining.toFixed(2)} Bs.</strong>`;
+                }
+
+                if (e.target.checked) {
+                    li.classList.add('checked');
+                } else {
+                    li.classList.remove('checked');
                 }
             });
 
-            const ul = document.createElement('ul');
-            // Ordenar los montos de mayor a menor para la vista agrupada
-            const montosUnicos = Object.keys(conteoMontos).map(Number).sort((a, b) => b - a);
+            li.appendChild(checkbox);
+            li.appendChild(label);
+            checklistUl.appendChild(li);
+        });
 
-            montosUnicos.forEach(monto => {
-                const cantidad = conteoMontos[monto];
-                const totalMonto = monto * cantidad;
-                const li = document.createElement('li');
-                li.textContent = `${monto.toFixed(2)} Bs. x ${cantidad} = ${totalMonto.toFixed(2)} Bs.`;
-                ul.appendChild(li);
-            });
-            resultadosDiv.appendChild(ul);
+        trackerDiv.appendChild(checklistUl);
+        container.appendChild(trackerDiv);
 
-            resultadosDiv.innerHTML += `<p class="info">Total a recargar: <strong>${resultado.suma.toFixed(2)} Bs.</strong></p>`;
+        if (resultado.suma < rentaActual) {
+            const warningP = document.createElement('p');
+            warningP.className = 'warning';
+            warningP.textContent = 'Nota: La suma es menor que tu renta. Considera ajustar los montos disponibles o el monto de la renta para una mejor aproximación.';
+            container.appendChild(warningP);
+        }
 
-            if (resultado.suma >= rentaActual) {
-                resultadosDiv.innerHTML += `<p class="success">Diferencia (sobrante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong></p>`;
-            } else {
-                resultadosDiv.innerHTML += `<p class="warning">Diferencia (faltante): <strong>${resultado.diferencia.toFixed(2)} Bs.</strong></p>`;
-            }
+        return container;
+    }
 
-            // Lógica de los checkboxes
-            const trackerDiv = document.createElement('div');
-            trackerDiv.classList.add('recharge-tracker');
+    // Función para mostrar los resultados en la interfaz
+    function mostrarResultados(rentaActual, resultados) {
+        resultadosDiv.innerHTML = '';
+        resultadosDiv.innerHTML += `<p class="info">Tu renta actual es: <strong>${rentaActual.toFixed(2)} Bs.</strong></p>`;
 
-            trackerDiv.innerHTML += `<h3>Progreso de Recarga</h3>`;
+        if (!resultados || resultados.length === 0) {
+            resultadosDiv.innerHTML += `<p class="error">No se encontró una combinación de recargas que se ajuste a tu renta con los montos proporcionados.</p>`;
+            return;
+        }
 
-            const remainingP = document.createElement('p');
-            remainingP.classList.add('remaining-amount');
-            remainingP.innerHTML = `Falta por recargar: <strong>${resultado.suma.toFixed(2)} Bs.</strong>`;
-            trackerDiv.appendChild(remainingP);
+        if (resultados.length === 1) {
+            // Solo una opción, renderizar como antes
+            const contenido = crearContenidoOpcion(rentaActual, resultados[0], 0);
+            resultadosDiv.appendChild(contenido);
+        } else {
+            // Dos opciones, crear pestañas
+            const tabsContainer = document.createElement('div');
+            tabsContainer.classList.add('tabs-container');
 
-            const checklistUl = document.createElement('ul');
-            checklistUl.classList.add('checklist');
+            const tabsHeader = document.createElement('div');
+            tabsHeader.classList.add('tabs-header');
 
-            let currentRemaining = resultado.suma;
+            const tabsContent = document.createElement('div');
+            tabsContent.classList.add('tabs-content');
 
-            resultado.seleccionados.forEach((monto, index) => {
-                const li = document.createElement('li');
+            resultados.forEach((resultado, index) => {
+                // Tab Button
+                const tabButton = document.createElement('button');
+                tabButton.classList.add('tab-button');
+                if (index === 0) {
+                    tabButton.classList.add('active');
+                    tabButton.textContent = `Opción 1: Menor Monto (${resultado.suma.toFixed(2)} Bs.)`;
+                } else {
+                    tabButton.textContent = `Opción 2: Menos Recargas (${resultado.suma.toFixed(2)} Bs.)`;
+                }
 
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `recharge-check-${index}`;
-                checkbox.value = monto;
+                // Tab Content Panel
+                const tabPanel = document.createElement('div');
+                tabPanel.classList.add('tab-panel');
+                if (index === 0) {
+                    tabPanel.classList.add('active');
+                }
+                const contenido = crearContenidoOpcion(rentaActual, resultado, index);
+                tabPanel.appendChild(contenido);
 
-                const label = document.createElement('label');
-                label.htmlFor = `recharge-check-${index}`;
-                label.textContent = `${monto.toFixed(2)} Bs.`;
+                // Event listener para cambiar pestaña
+                tabButton.addEventListener('click', () => {
+                    // Desactivar todos los botones y paneles
+                    tabsHeader.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                    tabsContent.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
 
-                // Add event listener to update remaining amount
-                checkbox.addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        currentRemaining -= monto;
-                    } else {
-                        currentRemaining += monto;
-                    }
-
-                    // Prevent floating point errors
-                    if (currentRemaining < 0.01) currentRemaining = 0;
-
-                    if (currentRemaining === 0) {
-                        remainingP.innerHTML = `<strong>¡Recarga completada!</strong>`;
-                    } else {
-                        remainingP.innerHTML = `Falta por recargar: <strong>${currentRemaining.toFixed(2)} Bs.</strong>`;
-                    }
-
-                    if (e.target.checked) {
-                        li.classList.add('checked');
-                    } else {
-                        li.classList.remove('checked');
-                    }
+                    // Activar el botón y panel clickeado
+                    tabButton.classList.add('active');
+                    tabPanel.classList.add('active');
                 });
 
-                li.appendChild(checkbox);
-                li.appendChild(label);
-                checklistUl.appendChild(li);
+                tabsHeader.appendChild(tabButton);
+                tabsContent.appendChild(tabPanel);
             });
 
-            trackerDiv.appendChild(checklistUl);
-            resultadosDiv.appendChild(trackerDiv);
-
-
-            if (resultado.suma < rentaActual) {
-                // To safely append a node without destroying events from innerHTML
-                const warningP = document.createElement('p');
-                warningP.className = 'warning';
-                warningP.textContent = 'Nota: La suma es menor que tu renta. Considera ajustar los montos disponibles o el monto de la renta para una mejor aproximación.';
-                resultadosDiv.appendChild(warningP);
-            }
-        } else {
-            resultadosDiv.innerHTML += `<p class="error">No se encontró una combinación de recargas que se ajuste a tu renta con los montos proporcionados.</p>`;
+            tabsContainer.appendChild(tabsHeader);
+            tabsContainer.appendChild(tabsContent);
+            resultadosDiv.appendChild(tabsContainer);
         }
     }
 
     // Event listener para el botón de cálculo
     calcularBtn.addEventListener('click', () => {
         const rentaActual = parseFloat(rentaActualInput.value);
-        const montosRecarga = montosRecargaActual; // ¡Usamos la variable que se actualiza!
+        const montosRecarga = montosRecargaActual;
 
         if (isNaN(rentaActual) || rentaActual <= 0) {
             resultadosDiv.innerHTML = '<p class="error">Por favor, ingresa una renta actual válida (número positivo).</p>';
@@ -261,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const resultado = encontrarRecargaOptima(rentaActual, montosRecarga);
-        mostrarResultados(rentaActual, resultado);
+        const resultados = encontrarRecargaOptima(rentaActual, montosRecarga);
+        mostrarResultados(rentaActual, resultados);
     });
 });
