@@ -1,4 +1,5 @@
-document.addEventListener('DOMContentLoaded', () => {
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
     const companiaTelefonicaSelect = document.getElementById('companiaTelefonica'); // Nuevo: Referencia a la lista desplegable
     const logoCompania = document.getElementById('logoCompania');
     const rentaActualInput = document.getElementById('rentaActual');
@@ -28,6 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Llama a la función para dibujar los montos iniciales al cargar la página
     dibujarMontos(montosRecargaActual);
 
+    // Make it available to the global scope for event listeners
+    window.encontrarRecargaOptima = encontrarRecargaOptima;
+    window.mostrarResultados = mostrarResultados;
+
     // Nuevo: Evento para detectar cambios en la lista desplegable
     companiaTelefonicaSelect.addEventListener('change', (event) => {
         const companiaSeleccionada = event.target.value;
@@ -46,106 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
         resultadosDiv.innerHTML = ''; // Opcional: Limpiar resultados anteriores para evitar confusiones
     });
     
-    // Función principal para encontrar la recarga óptima
-    function encontrarRecargaOptima(rentaActual, montosRecarga) {
-        if (!montosRecarga || montosRecarga.length === 0) {
-            return {
-                seleccionados: [],
-                suma: 0,
-                diferencia: rentaActual
-            };
-        }
-
-        // --- Algoritmo de Knapsack (Cambio de Monedas) ---
-        // Objetivo: Encontrar la combinación que sume >= rentaActual
-        // Criterio 1: Minimizar (Suma - RentaActual)
-        // Criterio 2: Minimizar el número de elementos (recargas)
-
-        const scale = 100;
-        const target = Math.ceil(rentaActual * scale);
-        const montosInt = montosRecarga.map(m => Math.round(m * scale));
-        const maxMontoInt = Math.max(...montosInt);
-
-        // Limite de búsqueda: Si tenemos una suma >= target + maxMonto,
-        // podríamos haber quitado el monto máximo y estaríamos más cerca del target (o aún válidos).
-        // Por seguridad y simplicidad, buscamos hasta target + maxMonto.
-        const limitInt = target + maxMontoInt;
-
-        // dpCount[s] almacena el número mínimo de monedas para llegar a la suma 's'.
-        // Inicializamos con un valor grande.
-        const INF = 2147483647;
-        const dpCount = new Int32Array(limitInt + 1).fill(INF);
-        // dpLastMonto[s] almacena el último monto agregado para llegar a 's' (para reconstruir).
-        const dpLastMonto = new Int32Array(limitInt + 1).fill(0);
-
-        dpCount[0] = 0;
-
-        // Llenamos la tabla DP
-        for (let monto of montosInt) {
-            for (let s = monto; s <= limitInt; s++) {
-                if (dpCount[s - monto] !== INF) {
-                    if (dpCount[s - monto] + 1 < dpCount[s]) {
-                        dpCount[s] = dpCount[s - monto] + 1;
-                        dpLastMonto[s] = monto;
-                    }
-                }
-            }
-        }
-
-        // Recopilamos todas las sumas válidas >= target
-        const results = [];
-        for (let s = target; s <= limitInt; s++) {
-            if (dpCount[s] !== INF) {
-                results.push({ sumInt: s, numRecargas: dpCount[s] });
-            }
-        }
-
-        if (results.length === 0) {
-             return [];
-        }
-
-        // Opción 1: Menor diferencia de dinero (primera en la lista, porque iteramos hacia arriba)
-        const opcion1 = results[0];
-
-        // Opción 2: Menor cantidad de recargas, límite +20%
-        const margenPorcentaje = 0.20;
-        const limiteSumaOpcion2 = opcion1.sumInt * (1 + margenPorcentaje);
-        let opcion2 = null;
-
-        for (let i = 1; i < results.length; i++) {
-            const r = results[i];
-            if (r.sumInt > limiteSumaOpcion2) {
-                break; // Ya nos pasamos del 20%
-            }
-            if (r.numRecargas < opcion1.numRecargas) {
-                opcion2 = r;
-                break; // Tomamos la PRIMERA que reduzca las recargas
-            }
-        }
-
-        const opcionesFinales = [opcion1];
-        if (opcion2) {
-            opcionesFinales.push(opcion2);
-        }
-
-        // Reconstruir los montos para cada opción
-        return opcionesFinales.map(op => {
-            const resultMontos = [];
-            let curr = op.sumInt;
-            while (curr > 0) {
-                let m = dpLastMonto[curr];
-                resultMontos.push(m / scale);
-                curr -= m;
-            }
-            resultMontos.sort((a, b) => b - a);
-            return {
-                seleccionados: resultMontos,
-                suma: op.sumInt / scale,
-                diferencia: Math.abs((op.sumInt / scale) - rentaActual)
-            };
-        });
-    }
-
     // Función para renderizar el contenido de una opción de recarga
     function crearContenidoOpcion(rentaActual, resultado, indexOpcion) {
         const container = document.createElement('div');
@@ -346,4 +251,111 @@ document.addEventListener('DOMContentLoaded', () => {
         const resultados = encontrarRecargaOptima(rentaActual, montosRecarga);
         mostrarResultados(rentaActual, resultados);
     });
-});
+    });
+}
+
+/**
+ * Función principal para encontrar la recarga óptima
+ * @param {number} rentaActual - El monto de la renta a cubrir
+ * @param {number[]} montosRecarga - Lista de montos de recarga permitidos
+ * @returns {Object[]} Lista de opciones de recarga encontradas
+ */
+function encontrarRecargaOptima(rentaActual, montosRecarga) {
+    if (!montosRecarga || montosRecarga.length === 0) {
+        return [];
+    }
+
+    // --- Algoritmo de Knapsack (Cambio de Monedas) ---
+    // Objetivo: Encontrar la combinación que sume >= rentaActual
+    // Criterio 1: Minimizar (Suma - RentaActual)
+    // Criterio 2: Minimizar el número de elementos (recargas)
+
+    const scale = 100;
+    const target = Math.ceil(rentaActual * scale);
+    const montosInt = montosRecarga.map(m => Math.round(m * scale));
+    const maxMontoInt = Math.max(...montosInt);
+
+    // Limite de búsqueda: Si tenemos una suma >= target + maxMonto,
+    // podríamos haber quitado el monto máximo y estaríamos más cerca del target (o aún válidos).
+    // Por seguridad y simplicidad, buscamos hasta target + maxMonto.
+    const limitInt = target + maxMontoInt;
+
+    // dpCount[s] almacena el número mínimo de monedas para llegar a la suma 's'.
+    // Inicializamos con un valor grande.
+    const INF = 2147483647;
+    const dpCount = new Int32Array(limitInt + 1).fill(INF);
+    // dpLastMonto[s] almacena el último monto agregado para llegar a 's' (para reconstruir).
+    const dpLastMonto = new Int32Array(limitInt + 1).fill(0);
+
+    dpCount[0] = 0;
+
+    // Llenamos la tabla DP
+    for (let monto of montosInt) {
+        for (let s = monto; s <= limitInt; s++) {
+            if (dpCount[s - monto] !== INF) {
+                if (dpCount[s - monto] + 1 < dpCount[s]) {
+                    dpCount[s] = dpCount[s - monto] + 1;
+                    dpLastMonto[s] = monto;
+                }
+            }
+        }
+    }
+
+    // Recopilamos todas las sumas válidas >= target
+    const results = [];
+    for (let s = target; s <= limitInt; s++) {
+        if (dpCount[s] !== INF) {
+            results.push({ sumInt: s, numRecargas: dpCount[s] });
+        }
+    }
+
+    if (results.length === 0) {
+         return [];
+    }
+
+    // Opción 1: Menor diferencia de dinero (primera en la lista, porque iteramos hacia arriba)
+    const opcion1 = results[0];
+
+    // Opción 2: Menor cantidad de recargas, límite +20%
+    const margenPorcentaje = 0.20;
+    const limiteSumaOpcion2 = opcion1.sumInt * (1 + margenPorcentaje);
+    let opcion2 = null;
+
+    for (let i = 1; i < results.length; i++) {
+        const r = results[i];
+        if (r.sumInt > limiteSumaOpcion2) {
+            break; // Ya nos pasamos del 20%
+        }
+        if (r.numRecargas < opcion1.numRecargas) {
+            opcion2 = r;
+            break; // Tomamos la PRIMERA que reduzca las recargas
+        }
+    }
+
+    const opcionesFinales = [opcion1];
+    if (opcion2) {
+        opcionesFinales.push(opcion2);
+    }
+
+    // Reconstruir los montos para cada opción
+    return opcionesFinales.map(op => {
+        const resultMontos = [];
+        let curr = op.sumInt;
+        while (curr > 0) {
+            let m = dpLastMonto[curr];
+            resultMontos.push(m / scale);
+            curr -= m;
+        }
+        resultMontos.sort((a, b) => b - a);
+        return {
+            seleccionados: resultMontos,
+            suma: op.sumInt / scale,
+            diferencia: Math.abs((op.sumInt / scale) - rentaActual)
+        };
+    });
+}
+
+// Node.js export for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { encontrarRecargaOptima };
+}
