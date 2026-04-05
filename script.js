@@ -241,8 +241,8 @@ if (typeof document !== 'undefined') {
         const rentaActual = parseFloat(rentaActualInput.value);
         const montosRecarga = montosRecargaActual;
 
-        if (isNaN(rentaActual) || rentaActual <= 0) {
-            resultadosDiv.innerHTML = '<p class="error">Por favor, ingresa una renta actual válida (número positivo).</p>';
+        if (isNaN(rentaActual) || rentaActual <= 0 || rentaActual > 100000) {
+            resultadosDiv.innerHTML = '<p class="error">Por favor, ingresa una renta actual válida (número positivo entre 0.01 y 100,000).</p>';
             return;
         }
         if (montosRecarga.length === 0) {
