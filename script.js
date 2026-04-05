@@ -265,13 +265,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Función para mostrar los resultados en la interfaz
     function mostrarResultados(rentaActual, resultados) {
-        resultadosDiv.innerHTML = '';
-        resultadosDiv.innerHTML += `<p class="info">Tu renta actual es: <strong>${rentaActual.toFixed(2)} Bs.</strong></p>`;
+        let htmlContent = `<p class="info">Tu renta actual es: <strong>${rentaActual.toFixed(2)} Bs.</strong></p>`;
 
         if (!resultados || resultados.length === 0) {
-            resultadosDiv.innerHTML += `<p class="error">No se encontró una combinación de recargas que se ajuste a tu renta con los montos proporcionados.</p>`;
+            htmlContent += `<p class="error">No se encontró una combinación de recargas que se ajuste a tu renta con los montos proporcionados.</p>`;
+            resultadosDiv.innerHTML = htmlContent;
             return;
         }
+
+        resultadosDiv.innerHTML = htmlContent;
 
         if (resultados.length === 1) {
             // Solo una opción, renderizar como antes
