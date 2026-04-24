@@ -9,7 +9,7 @@ if (typeof document !== 'undefined') {
 
     // --- Montos de Recarga Fijos (¡Ahora es un objeto!) ---
     const montosRecargaPorCompania = {
-        movistar: [150, 200, 1000, 2000, 3000, 5000, 8000, 10000],
+        movistar: [250, 600, 1200, 2400, 3600, 6000, 9500, 15000],
         digitel: [300, 600, 900, 1800, 3000, 5400, 7500, 9000, 11000]
     };
 
@@ -21,7 +21,7 @@ if (typeof document !== 'undefined') {
         montos.forEach(monto => {
             const span = document.createElement('span');
             span.classList.add('monto-tag');
-            span.textContent = `${monto.toFixed(2)} Bs.`;
+            span.textContent = `${monto.toLocaleString('de-DE')} Bs.`;
             montosFijosDisplay.appendChild(span);
         });
     }
@@ -126,7 +126,7 @@ if (typeof document !== 'undefined') {
 
             const label = document.createElement('label');
             label.htmlFor = `recharge-check-op${indexOpcion}-${index}`;
-            label.textContent = `${monto.toFixed(2)} Bs.`;
+            label.textContent = `${monto.toLocaleString('de-DE')} Bs.`;
 
             checkbox.addEventListener('change', (e) => {
                 if (e.target.checked) {
